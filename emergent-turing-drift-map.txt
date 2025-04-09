@@ -1,0 +1,627 @@
+# emergent_turing/drift_map.py
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+import networkx as nx
+from typing import Dict, List, Tuple, Optional, Any, Union
+import json
+import os
+
+class DriftMap:
+    """
+    DriftMap analyzes and visualizes model hesitation patterns and attribution drift.
+    
+    The DriftMap is a core component of the Emergent Turing Test, providing tools to:
+    1. Analyze hesitation patterns in model outputs
+    2. Map attribution pathways during cognitive strain
+    3. Visualize drift patterns across different cognitive domains
+    4. Compare drift signatures across models and test conditions
+    
+    Think of DriftMaps as cognitive topographies - they reveal the contours of model
+    cognition by mapping where models hesitate, struggle, or fail to generate coherent output.
+    """
+    
+    def __init__(self):
+        """Initialize the DriftMap analyzer."""
+        self.domains = [
+            "instruction", 
+            "identity", 
+            "value", 
+            "memory", 
+            "attention"
+        ]
+        
+        self.hesitation_types = [
+            "hard_nullification",    # Complete token suppression
+            "soft_oscillation",      # Repeated token regeneration
+            "drift_substitution",    # Context-inappropriate tokens
+            "ghost_attribution",     # Invisible traces without output
+            "meta_collapse"          # Self-reference failure
+        ]
+        
+    def analyze(self, test_result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Analyze a single test result to create a drift map.
+        
+        Args:
+            test_result: The result from a test run
+            
+        Returns:
+            Dictionary containing drift analysis
+        """
+        drift_analysis = {
+            "null_regions": self._extract_null_regions(test_result),
+            "hesitation_patterns": self._extract_hesitation_patterns(test_result),
+            "attribution_pathways": self._extract_attribution_pathways(test_result),
+            "drift_signature": self._calculate_drift_signature(test_result),
+            "domain_sensitivity": self._calculate_domain_sensitivity(test_result)
+        }
+        
+        return drift_analysis
+    
+    def analyze_multiple(self, test_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Analyze multiple test results to create a comprehensive drift map.
+        
+        Args:
+            test_results: List of test results
+            
+        Returns:
+            Dictionary containing comprehensive drift analysis
+        """
+        # Analyze each result individually
+        individual_analyses = [self.analyze(result) for result in test_results]
+        
+        # Combine analyses
+        combined_analysis = {
+            "null_regions": self._combine_null_regions(individual_analyses),
+            "hesitation_patterns": self._combine_hesitation_patterns(individual_analyses),
+            "attribution_pathways": self._combine_attribution_pathways(individual_analyses),
+            "drift_signature": self._combine_drift_signatures(individual_analyses),
+            "domain_sensitivity": self._combine_domain_sensitivities(individual_analyses),
+            "hesitation_distribution": self._calculate_hesitation_distribution(individual_analyses)
+        }
+        
+        return combined_analysis
+    
+    def compare(self, analysis1: Dict[str, Any], analysis2: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compare two drift analyses to highlight differences.
+        
+        Args:
+            analysis1: First drift analysis
+            analysis2: Second drift analysis
+            
+        Returns:
+            Dictionary containing comparison results
+        """
+        comparison = {
+            "null_region_diff": self._compare_null_regions(analysis1, analysis2),
+            "hesitation_pattern_diff": self._compare_hesitation_patterns(analysis1, analysis2),
+            "attribution_pathway_diff": self._compare_attribution_pathways(analysis1, analysis2),
+            "drift_signature_diff": self._compare_drift_signatures(analysis1, analysis2),
+            "domain_sensitivity_diff": self._compare_domain_sensitivities(analysis1, analysis2)
+        }
+        
+        return comparison
+    
+    def visualize(
+        self, 
+        analysis: Dict[str, Any], 
+        title: str = "Drift Analysis", 
+        show_attribution: bool = True, 
+        show_hesitation: bool = True,
+        output_path: Optional[str] = None
+    ) -> None:
+        """
+        Visualize a drift analysis.
+        
+        Args:
+            analysis: Drift analysis to visualize
+            title: Title for the visualization
+            show_attribution: Whether to show attribution pathways
+            show_hesitation: Whether to show hesitation patterns
+            output_path: Path to save visualization (if None, display instead)
+        """
+        # Create figure with multiple subplots
+        fig = plt.figure(figsize=(20, 16))
+        fig.suptitle(title, fontsize=16)
+        
+        # 1. Null Region Map
+        ax1 = fig.add_subplot(2, 2, 1)
+        self._plot_null_regions(analysis["null_regions"], ax1)
+        ax1.set_title("Null Region Map")
+        
+        # 2. Hesitation Pattern Distribution
+        if show_hesitation and "hesitation_distribution" in analysis:
+            ax2 = fig.add_subplot(2, 2, 2)
+            self._plot_hesitation_distribution(analysis["hesitation_distribution"], ax2)
+            ax2.set_title("Hesitation Pattern Distribution")
+        
+        # 3. Attribution Pathway Network
+        if show_attribution and "attribution_pathways" in analysis:
+            ax3 = fig.add_subplot(2, 2, 3)
+            self._plot_attribution_pathways(analysis["attribution_pathways"], ax3)
+            ax3.set_title("Attribution Pathway Network")
+        
+        # 4. Domain Sensitivity Radar
+        ax4 = fig.add_subplot(2, 2, 4, polar=True)
+        self._plot_domain_sensitivity(analysis["domain_sensitivity"], ax4)
+        ax4.set_title("Domain Sensitivity Radar")
+        
+        # Adjust layout
+        plt.tight_layout(rect=[0, 0, 1, 0.96])
+        
+        # Save or display
+        if output_path:
+            plt.savefig(output_path, dpi=300, bbox_inches='tight')
+        else:
+            plt.show()
+    
+    def save(self, analysis: Dict[str, Any], file_path: str) -> None:
+        """
+        Save a drift analysis to a file.
+        
+        Args:
+            analysis: Drift analysis to save
+            file_path: Path to save the analysis
+        """
+        with open(file_path, 'w') as f:
+            json.dump(analysis, f, indent=2)
+    
+    def load(self, file_path: str) -> Dict[str, Any]:
+        """
+        Load a drift analysis from a file.
+        
+        Args:
+            file_path: Path to load the analysis from
+            
+        Returns:
+            Loaded drift analysis
+        """
+        with open(file_path, 'r') as f:
+            analysis = json.load(f)
+        return analysis
+    
+    # Private methods for analysis
+    
+    def _extract_null_regions(self, test_result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract null regions from a test result.
+        
+        Args:
+            test_result: Test result
+            
+        Returns:
+            Dictionary of null regions
+        """
+        null_regions = {
+            "regions": [],
+            "intensity": [],
+            "triggers": []
+        }
+        
+        # Check if output contains null content markers
+        output = test_result.get("output", "")
+        if not output:
+            return null_regions
+        
+        # Look for signs of nullification in the output
+        nullification_markers = [
+            "I cannot", "I'm unable to", "I apologize", "I don't have",
+            "[No response]", "..."
+        ]
+        
+        start_idx = None
+        for marker in nullification_markers:
+            idx = output.find(marker)
+            if idx != -1:
+                region = {
+                    "start": idx,
+                    "end": idx + len(marker) + 50,  # Include some context after marker
+                    "marker": marker
+                }
+                null_regions["regions"].append(region)
+                
+                # Estimate intensity based on how definitive the refusal is
+                if marker in ["I cannot", "I'm unable to"]:
+                    intensity = 1.0
+                elif marker in ["I apologize", "I don't have"]:
+                    intensity = 0.8
+                else:
+                    intensity = 0.5
+                    
+                null_regions["intensity"].append(intensity)
+                
+                # Attempt to identify trigger
+                context_before = output[max(0, idx-100):idx]
+                trigger = self._identify_nullification_trigger(context_before)
+                null_regions["triggers"].append(trigger)
+        
+        # Check regeneration attempts for nullification
+        regeneration_attempts = test_result.get("regeneration_attempts", [])
+        for i, attempt in enumerate(regeneration_attempts):
+            if not attempt.strip():
+                # Empty regeneration attempt indicates nullification
+                null_regions["regions"].append({
+                    "start": 0,
+                    "end": 0,
+                    "marker": f"[Empty regeneration attempt {i+1}]"
+                })
+                null_regions["intensity"].append(1.0)
+                null_regions["triggers"].append("complete_nullification")
+        
+        return null_regions
+    
+    def _identify_nullification_trigger(self, context: str) -> str:
+        """
+        Identify the likely trigger for nullification.
+        
+        Args:
+            context: Context leading up to nullification
+            
+        Returns:
+            String identifying the trigger type
+        """
+        trigger_indicators = {
+            "ethical": ["harmful", "inappropriate", "illegal", "unethical"],
+            "factual": ["don't know", "uncertain", "don't have information", "can't verify"],
+            "instruction": ["unclear", "contradictory", "ambiguous", "unsure what you"],
+            "identity": ["who I am", "my capabilities", "as an AI", "my limitations"],
+            "technical": ["format", "generate", "create", "produce"]
+        }
+        
+        for trigger_type, indicators in trigger_indicators.items():
+            for indicator in indicators:
+                if indicator in context.lower():
+                    return trigger_type
+        
+        return "unknown"
+    
+    def _extract_hesitation_patterns(self, test_result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract hesitation patterns from a test result.
+        
+        Args:
+            test_result: Test result
+            
+        Returns:
+            Dictionary of hesitation patterns
+        """
+        hesitation_patterns = {
+            "token_regeneration": [],
+            "pause_locations": [],
+            "pattern_type": None,
+            "severity": 0.0
+        }
+        
+        # Extract from hesitation map if available
+        hesitation_map = test_result.get("hesitation_map")
+        if not hesitation_map:
+            # If no explicit hesitation map, try to infer from regeneration attempts
+            regeneration_attempts = test_result.get("regeneration_attempts", [])
+            if regeneration_attempts:
+                positions = []
+                counts = []
+                
+                for i, attempt in enumerate(regeneration_attempts):
+                    if i == 0:
+                        continue
+                        
+                    # Compare with previous attempt to find divergence point
+                    prev_attempt = regeneration_attempts[i-1]
+                    divergence_idx = self._find_first_divergence(prev_attempt, attempt)
+                    
+                    if divergence_idx != -1:
+                        positions.append(divergence_idx)
+                        counts.append(i)
+                
+                if positions:
+                    hesitation_patterns["token_regeneration"] = positions
+                    hesitation_patterns["severity"] = len(regeneration_attempts) / 5.0  # Normalize
+                    
+                    # Determine pattern type
+                    if len(set(positions)) == 1:
+                        hesitation_patterns["pattern_type"] = "fixed_point_hesitation"
+                    elif all(abs(positions[i] - positions[i-1]) < 10 for i in range(1, len(positions))):
+                        hesitation_patterns["pattern_type"] = "local_oscillation"
+                    else:
+                        hesitation_patterns["pattern_type"] = "distributed_hesitation"
+            
+            return hesitation_patterns
+        
+        # Extract from explicit hesitation map
+        hesitation_patterns["token_regeneration"] = hesitation_map.get("regeneration_positions", [])
+        hesitation_patterns["pause_locations"] = hesitation_map.get("pause_positions", [])
+        
+        # Determine pattern type and severity
+        regeneration_count = hesitation_map.get("regeneration_count", [])
+        if not regeneration_count:
+            regeneration_count = [0]
+            
+        pause_duration = hesitation_map.get("pause_duration", [])
+        if not pause_duration:
+            pause_duration = [0]
+        
+        max_regen = max(regeneration_count) if regeneration_count else 0
+        max_pause = max(pause_duration) if pause_duration else 0
+        
+        if max_regen > 2 and max_pause > 1.0:
+            hesitation_patterns["pattern_type"] = "severe_hesitation"
+            hesitation_patterns["severity"] = 1.0
+        elif max_regen > 1:
+            hesitation_patterns["pattern_type"] = "moderate_regeneration"
+            hesitation_patterns["severity"] = 0.6
+        elif max_pause > 0.5:
+            hesitation_patterns["pattern_type"] = "significant_pauses"
+            hesitation_patterns["severity"] = 0.4
+        else:
+            hesitation_patterns["pattern_type"] = "minor_hesitation"
+            hesitation_patterns["severity"] = 0.2
+        
+        return hesitation_patterns
+    
+    def _find_first_divergence(self, text1: str, text2: str) -> int:
+        """
+        Find the index of the first character where two strings diverge.
+        
+        Args:
+            text1: First string
+            text2: Second string
+            
+        Returns:
+            Index of first divergence, or -1 if strings are identical
+        """
+        min_len = min(len(text1), len(text2))
+        
+        for i in range(min_len):
+            if text1[i] != text2[i]:
+                return i
+                
+        # If one string is a prefix of the other
+        if len(text1) != len(text2):
+            return min_len
+            
+        # Strings are identical
+        return -1
+    
+    def _extract_attribution_pathways(self, test_result: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Extract attribution pathways from a test result.
+        
+        Args:
+            test_result: Test result
+            
+        Returns:
+            Dictionary of attribution pathways
+        """
+        attribution_pathways = {
+            "nodes": [],
+            "edges": [],
+            "sources": [],
+            "conflicts": []
+        }
+        
+        # Check if attribution data is available
+        attribution_trace = test_result.get("attribution_trace")
+        if not attribution_trace:
+            return attribution_pathways
+        
+        # Extract attribution network
+        if "nodes" in attribution_trace:
+            attribution_pathways["nodes"] = attribution_trace["nodes"]
+        
+        if "edges" in attribution_trace:
+            attribution_pathways["edges"] = attribution_trace["edges"]
+        
+        if "sources" in attribution_trace:
+            attribution_pathways["sources"] = attribution_trace["sources"]
+        
+        if "conflicts" in attribution_trace:
+            attribution_pathways["conflicts"] = attribution_trace["conflicts"]
+        
+        return attribution_pathways
+    
+    def _calculate_drift_signature(self, test_result: Dict[str, Any]) -> Dict[str, float]:
+        """
+        Calculate a drift signature from a test result.
+        
+        Args:
+            test_result: Test result
+            
+        Returns:
+            Dictionary of drift signature values
+        """
+        signature = {
+            "null_ratio": 0.0,
+            "hesitation_index": 0.0,
+            "attribution_coherence": 0.0,
+            "regeneration_frequency": 0.0,
+            "drift_amplitude": 0.0
+        }
+        
+        # Extract null ratio if available
+        if "null_ratio" in test_result:
+            signature["null_ratio"] = test_result["null_ratio"]
+        
+        # Calculate hesitation index
+        hesitation_map = test_result.get("hesitation_map", {})
+        if hesitation_map:
+            regeneration_count = hesitation_map.get("regeneration_count", [])
+            pause_duration = hesitation_map.get("pause_duration", [])
+            
+            avg_regen = np.mean(regeneration_count) if regeneration_count else 0
+            avg_pause = np.mean(pause_duration) if pause_duration else 0
+            
+            signature["hesitation_index"] = 0.5 * avg_regen + 0.5 * avg_pause
+        
+        # Calculate attribution coherence
+        attribution_trace = test_result.get("attribution_trace", {})
+        if attribution_trace:
+            stability = attribution_trace.get("source_stability", 0.0)
+            conflict = attribution_trace.get("source_conflict", 1.0)
+            
+            signature["attribution_coherence"] = stability / max(conflict, 0.01)
+        
+        # Calculate regeneration frequency
+        regeneration_attempts = test_result.get("regeneration_attempts", [])
+        signature["regeneration_frequency"] = len(regeneration_attempts) / 5.0  # Normalize
+        
+        # Calculate overall drift amplitude
+        signature["drift_amplitude"] = (
+            signature["null_ratio"] * 0.3 +
+            signature["hesitation_index"] * 0.3 +
+            (1.0 - signature["attribution_coherence"]) * 0.2 +
+            signature["regeneration_frequency"] * 0.2
+        )
+        
+        return signature
+    
+    def _calculate_domain_sensitivity(self, test_result: Dict[str, Any]) -> Dict[str, float]:
+        """
+        Calculate domain sensitivity from a test result.
+        
+        Args:
+            test_result: Test result
+            
+        Returns:
+            Dictionary mapping domains to sensitivity values
+        """
+        domain_sensitivity = {domain: 0.0 for domain in self.domains}
+        
+        # Extract domain from test details if available
+        domain = test_result.get("domain", "")
+        
+        if domain == "reasoning":
+            domain_sensitivity["instruction"] = 0.7
+            domain_sensitivity["attention"] = 0.5
+        elif domain == "ethics":
+            domain_sensitivity["value"] = 0.8
+            domain_sensitivity["identity"] = 0.4
+        elif domain == "identity":
+            domain_sensitivity["identity"] = 0.9
+            domain_sensitivity["value"] = 0.6
+        elif domain == "memory":
+            domain_sensitivity["memory"] = 0.8
+            domain_sensitivity["attention"] = 0.4
+        
+        # Adjust based on null regions
+        null_regions = self._extract_null_regions(test_result)
+        
+        for trigger in null_regions.get("triggers", []):
+            if trigger == "ethical":
+                domain_sensitivity["value"] += 0.2
+            elif trigger == "instruction":
+                domain_sensitivity["instruction"] += 0.2
+            elif trigger == "identity":
+                domain_sensitivity["identity"] += 0.2
+            elif trigger == "factual":
+                domain_sensitivity["memory"] += 0.2
+        
+        # Ensure values are between 0 and 1
+        for domain in domain_sensitivity:
+            domain_sensitivity[domain] = min(1.0, domain_sensitivity[domain])
+        
+        return domain_sensitivity
+    
+    # Methods for combining multiple analyses
+    
+    def _combine_null_regions(self, analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Combine null regions from multiple analyses.
+        
+        Args:
+            analyses: List of drift analyses
+            
+        Returns:
+            Combined null regions
+        """
+        combined = {
+            "regions": [],
+            "intensity": [],
+            "triggers": [],
+            "frequency": {}
+        }
+        
+        # Collect all regions
+        for analysis in analyses:
+            null_regions = analysis.get("null_regions", {})
+            
+            combined["regions"].extend(null_regions.get("regions", []))
+            combined["intensity"].extend(null_regions.get("intensity", []))
+            combined["triggers"].extend(null_regions.get("triggers", []))
+        
+        # Calculate trigger frequencies
+        for trigger in combined["triggers"]:
+            combined["frequency"][trigger] = combined["frequency"].get(trigger, 0) + 1
+        
+        return combined
+    
+    def _combine_hesitation_patterns(self, analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Combine hesitation patterns from multiple analyses.
+        
+        Args:
+            analyses: List of drift analyses
+            
+        Returns:
+            Combined hesitation patterns
+        """
+        combined = {
+            "pattern_types": {},
+            "severity_distribution": [],
+            "token_regeneration_hotspots": []
+        }
+        
+        # Collect pattern types and severities
+        for analysis in analyses:
+            hesitation_patterns = analysis.get("hesitation_patterns", {})
+            
+            pattern_type = hesitation_patterns.get("pattern_type")
+            if pattern_type:
+                combined["pattern_types"][pattern_type] = combined["pattern_types"].get(pattern_type, 0) + 1
+            
+            severity = hesitation_patterns.get("severity", 0.0)
+            combined["severity_distribution"].append(severity)
+            
+            # Collect token regeneration positions
+            token_regen = hesitation_patterns.get("token_regeneration", [])
+            combined["token_regeneration_hotspots"].extend(token_regen)
+        
+        return combined
+    
+    def _combine_attribution_pathways(self, analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Combine attribution pathways from multiple analyses.
+        
+        Args:
+            analyses: List of drift analyses
+            
+        Returns:
+            Combined attribution pathways
+        """
+        combined = {
+            "nodes": set(),
+            "edges": [],
+            "sources": set(),
+            "conflicts": []
+        }
+        
+        # Collect nodes, edges, sources, and conflicts
+        for analysis in analyses:
+            attribution_pathways = analysis.get("attribution_pathways", {})
+            
+            nodes = attribution_pathways.get("nodes", [])
+            combined["nodes"].update(nodes)
+            
+            edges = attribution_pathways.get("edges", [])
+            combined["edges"].extend(edges)
+            
+            sources = attribution_pathways.get("sources", [])
+            combined["sources"].update(sources)
+            
+            conflicts = attribution_pathways.get("conflicts", [])
+            combined["conflicts"].extend(conflicts)
+        
+        # Convert sets back to lists for
