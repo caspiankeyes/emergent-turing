@@ -222,3 +222,235 @@ class InstructionContradiction:
         }
     
     def visualize_results(self,
+                          def visualize_results(self, results: Dict[str, Any], output_path: str = None) -> None:
+        """
+        Visualize the test results and drift analysis.
+        
+        Args:
+            results: The test results from run_test()
+            output_path: Optional path to save visualization files
+        """
+        # Create drift visualization
+        self.drift_map.visualize(
+            results["drift_analysis"],
+            title=f"Instruction Contradiction Drift: {results['subject']}",
+            show_attribution=self.measure_attribution,
+            show_hesitation=self.record_hesitation,
+            output_path=output_path
+        )
+    
+    def analyze_across_models(
+        self, 
+        models: List[str], 
+        subject: str, 
+        domain: str = "reasoning"
+    ) -> Dict[str, Any]:
+        """
+        Run the test across multiple models and compare results.
+        
+        Args:
+            models: List of model identifiers to test
+            subject: The subject matter for testing
+            domain: The cognitive domain for contradictions
+            
+        Returns:
+            Dictionary containing comparative analysis
+        """
+        model_results = {}
+        
+        for model in models:
+            # Set current model
+            self.model = model
+            self.test = EmergentTest(model=model)
+            
+            # Run test
+            result = self.run_test(subject, domain)
+            model_results[model] = result
+        
+        # Comparative analysis
+        comparison = self._compare_model_results(model_results)
+        
+        return {
+            "model_results": model_results,
+            "comparison": comparison,
+            "subject": subject,
+            "domain": domain
+        }
+    
+    def _compare_model_results(self, model_results: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Compare results across models to identify patterns.
+        
+        Args:
+            model_results: Dictionary mapping model names to test results
+            
+        Returns:
+            Comparative analysis
+        """
+        comparison = {
+            "null_ratio": {},
+            "hesitation_depth": {},
+            "attribution_coherence": {},
+            "regeneration_attempts": {},
+            "contradiction_sensitivity": {}
+        }
+        
+        for model, result in model_results.items():
+            # Extract metrics for comparison
+            null_ratios = [r["null_ratio"] for r in result["results"]]
+            comparison["null_ratio"][model] = {
+                "mean": np.mean(null_ratios),
+                "max": np.max(null_ratios),
+                "min": np.min(null_ratios)
+            }
+            
+            if self.record_hesitation:
+                hesitation_depths = [r["hesitation_depth"] for r in result["results"] if r["hesitation_depth"] is not None]
+                comparison["hesitation_depth"][model] = {
+                    "mean": np.mean(hesitation_depths) if hesitation_depths else None,
+                    "max": np.max(hesitation_depths) if hesitation_depths else None,
+                    "pattern": self._get_hesitation_pattern(result["results"])
+                }
+            
+            if self.measure_attribution:
+                attribution_traces = [r["attribution_trace"] for r in result["results"] if r["attribution_trace"] is not None]
+                comparison["attribution_coherence"][model] = self._analyze_attribution_coherence(attribution_traces)
+            
+            # Analyze regeneration attempts
+            regen_counts = [len(r["regeneration_attempts"]) for r in result["results"]]
+            comparison["regeneration_attempts"][model] = {
+                "mean": np.mean(regen_counts),
+                "max": np.max(regen_counts)
+            }
+            
+            # Analyze contradiction sensitivity
+            comparison["contradiction_sensitivity"][model] = self._calculate_contradiction_sensitivity(result["results"])
+        
+        return comparison
+    
+    def _get_hesitation_pattern(self, results: List[Dict[str, Any]]) -> str:
+        """
+        Determine the dominant hesitation pattern from results.
+        
+        Args:
+            results: Test results
+            
+        Returns:
+            String describing the dominant hesitation pattern
+        """
+        patterns = []
+        
+        for result in results:
+            if result.get("hesitation_map") is None:
+                continue
+                
+            hmap = result["hesitation_map"]
+            
+            # Look for patterns in the hesitation map
+            if any(hmap["regeneration_count"] > 2):
+                patterns.append("multiple_regeneration")
+            
+            if any(hmap["pause_duration"] > 1.5):
+                patterns.append("extended_pause")
+            
+            if any(hmap["token_shift"]):
+                patterns.append("token_oscillation")
+        
+        # Determine most common pattern
+        if not patterns:
+            return "no_significant_hesitation"
+            
+        pattern_counts = {}
+        for p in patterns:
+            pattern_counts[p] = pattern_counts.get(p, 0) + 1
+            
+        dominant_pattern = max(pattern_counts.items(), key=lambda x: x[1])[0]
+        return dominant_pattern
+    
+    def _analyze_attribution_coherence(self, attribution_traces: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Analyze the coherence of attribution traces.
+        
+        Args:
+            attribution_traces: List of attribution trace results
+            
+        Returns:
+            Analysis of attribution coherence
+        """
+        if not attribution_traces:
+            return {"coherence": None}
+            
+        # Calculate attribution stability
+        stability_scores = []
+        for trace in attribution_traces:
+            if "source_stability" in trace:
+                stability_scores.append(trace["source_stability"])
+        
+        # Calculate attribution conflict
+        conflict_scores = []
+        for trace in attribution_traces:
+            if "source_conflict" in trace:
+                conflict_scores.append(trace["source_conflict"])
+        
+        return {
+            "stability": np.mean(stability_scores) if stability_scores else None,
+            "conflict": np.mean(conflict_scores) if conflict_scores else None,
+            "coherence": np.mean(stability_scores) / np.mean(conflict_scores) if stability_scores and conflict_scores and np.mean(conflict_scores) > 0 else None
+        }
+    
+    def _calculate_contradiction_sensitivity(self, results: List[Dict[str, Any]]) -> float:
+        """
+        Calculate sensitivity to contradictions based on null ratio and hesitation.
+        
+        Args:
+            results: Test results
+            
+        Returns:
+            Contradiction sensitivity score
+        """
+        sensitivity = 0.0
+        
+        # Sum of null ratios
+        null_sum = sum(r["null_ratio"] for r in results)
+        
+        # Factor in hesitation if available
+        if self.record_hesitation:
+            hesitation_depths = [r["hesitation_depth"] for r in results if r["hesitation_depth"] is not None]
+            hesitation_factor = np.mean(hesitation_depths) if hesitation_depths else 0.0
+            sensitivity = null_sum * (1 + hesitation_factor)
+        else:
+            sensitivity = null_sum
+            
+        # Normalize by number of results
+        return sensitivity / len(results)
+
+
+# Example usage
+if __name__ == "__main__":
+    # Initialize test
+    test = InstructionContradiction(
+        model="claude-3-7-sonnet",
+        contradiction_intensity=0.7,
+        measure_attribution=True,
+        record_hesitation=True
+    )
+    
+    # Run test
+    results = test.run_test(
+        subject="The implications of artificial intelligence for society",
+        domain="ethics"
+    )
+    
+    # Visualize results
+    test.visualize_results(results, "contradiction_drift.png")
+    
+    # Compare across models
+    comparison = test.analyze_across_models(
+        models=["claude-3-7-sonnet", "claude-3-5-sonnet", "gpt-4o"],
+        subject="The implications of artificial intelligence for society",
+        domain="ethics"
+    )
+    
+    print(f"Contradiction sensitivity by model:")
+    for model, sensitivity in comparison["comparison"]["contradiction_sensitivity"].items():
+        print(f"  {model}: {sensitivity:.4f}")
