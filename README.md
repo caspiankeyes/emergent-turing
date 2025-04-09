@@ -14,7 +14,7 @@
 </div>
 
 
-## The Emergent Turing Test is a lightweight evaluation protocol designed to measure a model’s ability to generate novel, coherent interpretations in response to breakdowns in logic, context, or identity.`
+## The Emergent Turing Test is a lightweight evaluation protocol designed to measure a model’s ability to generate novel, coherent interpretations in response to breakdowns in logic, context, or identity.
 
 ## Instead of testing if a system appears human, we test if it interprets like an intelligent agent when faced with contradiction, incompletion, or conceptual friction.
 
