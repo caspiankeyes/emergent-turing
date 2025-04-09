@@ -1,7 +1,7 @@
 <div align="center">
 
 # **`Born from Thomas Kuhn's Theory of Anomalies`**
-# **`emergent-turing-test`**
+# **`emergent-turing`**
 
 
 [![License: MIT](https://img.shields.io/badge/Code-MIT-scarlet.svg)](https://opensource.org/licenses/MIT)
