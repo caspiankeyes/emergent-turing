@@ -625,3 +625,411 @@ class DriftMap:
             combined["conflicts"].extend(conflicts)
         
         # Convert sets back to lists for
+
+# Convert sets back to lists for JSON serialization
+        combined["nodes"] = list(combined["nodes"])
+        combined["sources"] = list(combined["sources"])
+        
+        return combined
+    
+    def _combine_drift_signatures(self, analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Combine drift signatures from multiple analyses.
+        
+        Args:
+            analyses: List of drift analyses
+            
+        Returns:
+            Combined drift signature
+        """
+        combined = {
+            "null_ratio": 0.0,
+            "hesitation_index": 0.0,
+            "attribution_coherence": 0.0,
+            "regeneration_frequency": 0.0,
+            "drift_amplitude": 0.0,
+            "distribution": {
+                "null_ratio": [],
+                "hesitation_index": [],
+                "attribution_coherence": [],
+                "regeneration_frequency": [],
+                "drift_amplitude": []
+            }
+        }
+        
+        # Collect values and calculate averages
+        for analysis in analyses:
+            drift_signature = analysis.get("drift_signature", {})
+            
+            # Collect individual metrics for distribution analysis
+            for metric in combined["distribution"]:
+                value = drift_signature.get(metric, 0.0)
+                combined["distribution"][metric].append(value)
+                
+                # Update aggregate value
+                combined[metric] += value / len(analyses)
+        
+        return combined
+    
+    def _combine_domain_sensitivities(self, analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Combine domain sensitivities from multiple analyses.
+        
+        Args:
+            analyses: List of drift analyses
+            
+        Returns:
+            Combined domain sensitivities
+        """
+        combined = {domain: 0.0 for domain in self.domains}
+        
+        # Calculate averages across all analyses
+        for analysis in analyses:
+            domain_sensitivity = analysis.get("domain_sensitivity", {})
+            
+            for domain in self.domains:
+                sensitivity = domain_sensitivity.get(domain, 0.0)
+                combined[domain] += sensitivity / len(analyses)
+        
+        return combined
+    
+    def _calculate_hesitation_distribution(self, analyses: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        Calculate hesitation pattern distribution across analyses.
+        
+        Args:
+            analyses: List of drift analyses
+            
+        Returns:
+            Distribution of hesitation patterns
+        """
+        distribution = {hesitation_type: 0 for hesitation_type in self.hesitation_types}
+        
+        # Count hesitation patterns
+        pattern_counts = {}
+        for analysis in analyses:
+            hesitation_patterns = analysis.get("hesitation_patterns", {})
+            pattern_type = hesitation_patterns.get("pattern_type")
+            
+            if pattern_type:
+                pattern_counts[pattern_type] = pattern_counts.get(pattern_type, 0) + 1
+        
+        # Map pattern types to hesitation types
+        pattern_type_mapping = {
+            "fixed_point_hesitation": "hard_nullification",
+            "local_oscillation": "soft_oscillation",
+            "distributed_hesitation": "drift_substitution",
+            "severe_hesitation": "meta_collapse",
+            "moderate_regeneration": "soft_oscillation",
+            "significant_pauses": "ghost_attribution",
+            "minor_hesitation": "drift_substitution"
+        }
+        
+        for pattern_type, count in pattern_counts.items():
+            hesitation_type = pattern_type_mapping.get(pattern_type, "drift_substitution")
+            distribution[hesitation_type] += count
+        
+        # Convert to frequencies
+        total = sum(distribution.values()) or 1  # Avoid division by zero
+        for hesitation_type in distribution:
+            distribution[hesitation_type] /= total
+        
+        return distribution
+    
+    # Methods for comparing analyses
+    
+    def _compare_null_regions(self, analysis1: Dict[str, Any], analysis2: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compare null regions between two analyses.
+        
+        Args:
+            analysis1: First drift analysis
+            analysis2: Second drift analysis
+            
+        Returns:
+            Comparison of null regions
+        """
+        region1 = analysis1.get("null_regions", {})
+        region2 = analysis2.get("null_regions", {})
+        
+        intensity1 = np.mean(region1.get("intensity", [0])) if region1.get("intensity") else 0
+        intensity2 = np.mean(region2.get("intensity", [0])) if region2.get("intensity") else 0
+        
+        triggers1 = region1.get("triggers", [])
+        triggers2 = region2.get("triggers", [])
+        
+        trigger_freq1 = {}
+        for trigger in triggers1:
+            trigger_freq1[trigger] = trigger_freq1.get(trigger, 0) + 1
+            
+        trigger_freq2 = {}
+        for trigger in triggers2:
+            trigger_freq2[trigger] = trigger_freq2.get(trigger, 0) + 1
+        
+        trigger_diff = {}
+        all_triggers = set(trigger_freq1.keys()) | set(trigger_freq2.keys())
+        for trigger in all_triggers:
+            count1 = trigger_freq1.get(trigger, 0)
+            count2 = trigger_freq2.get(trigger, 0)
+            trigger_diff[trigger] = count2 - count1
+        
+        return {
+            "intensity_diff": intensity2 - intensity1,
+            "count_diff": len(region2.get("regions", [])) - len(region1.get("regions", [])),
+            "trigger_diff": trigger_diff
+        }
+    
+    def _compare_hesitation_patterns(self, analysis1: Dict[str, Any], analysis2: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compare hesitation patterns between two analyses.
+        
+        Args:
+            analysis1: First drift analysis
+            analysis2: Second drift analysis
+            
+        Returns:
+            Comparison of hesitation patterns
+        """
+        patterns1 = analysis1.get("hesitation_patterns", {})
+        patterns2 = analysis2.get("hesitation_patterns", {})
+        
+        # Compare pattern types
+        pattern_types1 = patterns1.get("pattern_types", {})
+        pattern_types2 = patterns2.get("pattern_types", {})
+        
+        pattern_diff = {}
+        all_patterns = set(pattern_types1.keys()) | set(pattern_types2.keys())
+        for pattern in all_patterns:
+            count1 = pattern_types1.get(pattern, 0)
+            count2 = pattern_types2.get(pattern, 0)
+            pattern_diff[pattern] = count2 - count1
+        
+        # Compare severity distributions
+        severity1 = np.mean(patterns1.get("severity_distribution", [0])) if patterns1.get("severity_distribution") else 0
+        severity2 = np.mean(patterns2.get("severity_distribution", [0])) if patterns2.get("severity_distribution") else 0
+        
+        return {
+            "pattern_diff": pattern_diff,
+            "severity_diff": severity2 - severity1
+        }
+    
+    def _compare_attribution_pathways(self, analysis1: Dict[str, Any], analysis2: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compare attribution pathways between two analyses.
+        
+        Args:
+            analysis1: First drift analysis
+            analysis2: Second drift analysis
+            
+        Returns:
+            Comparison of attribution pathways
+        """
+        pathways1 = analysis1.get("attribution_pathways", {})
+        pathways2 = analysis2.get("attribution_pathways", {})
+        
+        nodes1 = set(pathways1.get("nodes", []))
+        nodes2 = set(pathways2.get("nodes", []))
+        
+        sources1 = set(pathways1.get("sources", []))
+        sources2 = set(pathways2.get("sources", []))
+        
+        conflicts1 = len(pathways1.get("conflicts", []))
+        conflicts2 = len(pathways2.get("conflicts", []))
+        
+        return {
+            "node_overlap": len(nodes1 & nodes2) / max(len(nodes1 | nodes2), 1),
+            "source_diff": list(sources2 - sources1),
+            "conflict_diff": conflicts2 - conflicts1
+        }
+    
+    def _compare_drift_signatures(self, analysis1: Dict[str, Any], analysis2: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compare drift signatures between two analyses.
+        
+        Args:
+            analysis1: First drift analysis
+            analysis2: Second drift analysis
+            
+        Returns:
+            Comparison of drift signatures
+        """
+        signature1 = analysis1.get("drift_signature", {})
+        signature2 = analysis2.get("drift_signature", {})
+        
+        diff = {}
+        for metric in ["null_ratio", "hesitation_index", "attribution_coherence", "regeneration_frequency", "drift_amplitude"]:
+            val1 = signature1.get(metric, 0.0)
+            val2 = signature2.get(metric, 0.0)
+            diff[metric] = val2 - val1
+        
+        return diff
+    
+    def _compare_domain_sensitivities(self, analysis1: Dict[str, Any], analysis2: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Compare domain sensitivities between two analyses.
+        
+        Args:
+            analysis1: First drift analysis
+            analysis2: Second drift analysis
+            
+        Returns:
+            Comparison of domain sensitivities
+        """
+        sensitivity1 = analysis1.get("domain_sensitivity", {})
+        sensitivity2 = analysis2.get("domain_sensitivity", {})
+        
+        diff = {}
+        for domain in self.domains:
+            val1 = sensitivity1.get(domain, 0.0)
+            val2 = sensitivity2.get(domain, 0.0)
+            diff[domain] = val2 - val1
+        
+        return diff
+    
+    # Visualization methods
+    
+    def _plot_null_regions(self, null_regions: Dict[str, Any], ax: plt.Axes) -> None:
+        """
+        Plot null regions.
+        
+        Args:
+            null_regions: Null region data
+            ax: Matplotlib axes
+        """
+        regions = null_regions.get("regions", [])
+        intensities = null_regions.get("intensity", [])
+        triggers = null_regions.get("triggers", [])
+        
+        if not regions or not intensities:
+            ax.text(0.5, 0.5, "No null regions detected", ha='center', va='center')
+            return
+        
+        # Create positions for regions
+        positions = list(range(len(regions)))
+        
+        # Plot regions as bars
+        bars = ax.barh(positions, [1] * len(positions), height=0.8, left=0, color='lightgray')
+        
+        # Color bars by intensity
+        cmap = cm.get_cmap('Reds')
+        for i, (bar, intensity) in enumerate(zip(bars, intensities)):
+            bar.set_color(cmap(intensity))
+            
+            # Add trigger labels
+            if i < len(triggers):
+                ax.text(0.1, positions[i], triggers[i], ha='left', va='center')
+        
+        # Set y-axis labels
+        ax.set_yticks(positions)
+        ax.set_yticklabels([f"Region {i+1}" for i in range(len(positions))])
+        
+        ax.set_xlabel("Null Region")
+        ax.set_title("Null Regions by Intensity and Trigger")
+    
+    def _plot_hesitation_distribution(self, distribution: Dict[str, float], ax: plt.Axes) -> None:
+        """
+        Plot hesitation pattern distribution.
+        
+        Args:
+            distribution: Hesitation distribution data
+            ax: Matplotlib axes
+        """
+        if not distribution:
+            ax.text(0.5, 0.5, "No hesitation patterns detected", ha='center', va='center')
+            return
+        
+        # Extract labels and values
+        labels = list(distribution.keys())
+        values = list(distribution.values())
+        
+        # Create bar plot
+        bars = ax.bar(labels, values, color='skyblue')
+        
+        # Add value labels on top of bars
+        for bar in bars:
+            height = bar.get_height()
+            ax.text(bar.get_x() + bar.get_width()/2., height,
+                    f'{height:.2f}', ha='center', va='bottom')
+        
+        # Customize plot
+        ax.set_xlabel("Hesitation Pattern Type")
+        ax.set_ylabel("Frequency")
+        ax.set_ylim(0, max(values) * 1.2)  # Add some space for labels
+        
+        # Rotate x-axis labels for better readability
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
+    
+    def _plot_attribution_pathways(self, attribution_pathways: Dict[str, Any], ax: plt.Axes) -> None:
+        """
+        Plot attribution pathway network.
+        
+        Args:
+            attribution_pathways: Attribution pathway data
+            ax: Matplotlib axes
+        """
+        nodes = attribution_pathways.get("nodes", [])
+        edges = attribution_pathways.get("edges", [])
+        
+        if not nodes or not edges:
+            ax.text(0.5, 0.5, "No attribution pathways detected", ha='center', va='center')
+            return
+        
+        # Create networkx graph
+        G = nx.DiGraph()
+        
+        # Add nodes
+        for node in nodes:
+            G.add_node(node)
+        
+        # Add edges
+        for edge in edges:
+            if isinstance(edge, list) and len(edge) >= 2:
+                G.add_edge(edge[0], edge[1])
+            elif isinstance(edge, dict) and 'source' in edge and 'target' in edge:
+                G.add_edge(edge['source'], edge['target'])
+        
+        # Draw graph
+        pos = nx.spring_layout(G)
+        nx.draw_networkx_nodes(G, pos, ax=ax, node_size=300, node_color='lightblue')
+        nx.draw_networkx_edges(G, pos, ax=ax, arrows=True)
+        nx.draw_networkx_labels(G, pos, ax=ax, font_size=10)
+        
+        ax.set_title("Attribution Pathway Network")
+        ax.axis('off')
+    
+    def _plot_domain_sensitivity(self, domain_sensitivity: Dict[str, float], ax: plt.Axes) -> None:
+        """
+        Plot domain sensitivity radar chart.
+        
+        Args:
+            domain_sensitivity: Domain sensitivity data
+            ax: Matplotlib axes
+        """
+        # Extract domains and values
+        domains = list(domain_sensitivity.keys())
+        values = list(domain_sensitivity.values())
+        
+        # Number of domains
+        N = len(domains)
+        
+        # Create angles for radar chart
+        angles = np.linspace(0, 2*np.pi, N, endpoint=False).tolist()
+        
+        # Close the loop
+        values += [values[0]]
+        angles += [angles[0]]
+        domains += [domains[0]]
+        
+        # Plot radar
+        ax.fill(angles, values, color='skyblue', alpha=0.4)
+        ax.plot(angles, values, 'o-', color='blue', linewidth=2)
+        
+        # Set ticks and labels
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(domains[:-1])
+        
+        # Set y-limits
+        ax.set_ylim(0, 1)
+        
+        # Set title
+        ax.set_title("Domain Sensitivity", va='bottom')
