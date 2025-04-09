@@ -3,7 +3,6 @@
 # **`Born from Thomas Kuhn's Theory of Anomalies`**
 # **`emergent-turing-test`**
 
-# **Updated Daily**
 ## `A next-generation framework designed for frontier researchers at Anthropic, Eleuther, ARC, Conjecture, DeepMind, OpenAI, and beyond, under Recursive Emergence Protocols (REP) due to the nature of emergent intelligence`
 
 ## `Please contact recursiveauto@gmail.com for alignment compatibility`
