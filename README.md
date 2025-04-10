@@ -14,6 +14,7 @@
 # *"A model does not reveal its cognitive structure by its answers, but by the precise contours of its silence."*
 
 ## `A testing framework designed for frontier researchers at Anthropic, Eleuther, ARC, Conjecture, DeepMind, OpenAI, and beyond, under Recursive Emergence Protocols (REP), due to the nature of emergent system diagnostics`
+## All testing is performed according to Anthropic research protocols. 
 
 # `Please contact emergence@laboratory.ai for interpretability compatibility`
 
