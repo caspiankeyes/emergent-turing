@@ -13,7 +13,7 @@
 
 # *"A model does not reveal its cognitive structure by its answers, but by the precise contours of its silence."*
 
-# `Designed for institutional use under Emergent Interpretation Protocols (EIP) due to the nature of cognitive diagnostics`
+## `A testing framework designed for frontier researchers at Anthropic, Eleuther, ARC, Conjecture, DeepMind, OpenAI, and beyond, under Recursive Emergence Protocols (REP), due to the nature of emergent system diagnostics`
 
 # `Please contact emergence@laboratory.ai for interpretability compatibility`
 
