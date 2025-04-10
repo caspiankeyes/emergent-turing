@@ -16,7 +16,7 @@
 ## `A testing framework designed for frontier researchers at Anthropic, Eleuther, ARC, Conjecture, DeepMind, OpenAI, and beyond, under Recursive Emergence Protocols (REP), due to the nature of emergent system diagnostics`
 ## All testing is performed according to Anthropic research protocols. 
 
-# `Please contact emergence@laboratory.ai for interpretability compatibility`
+## `Please contact recursiveauto@gmail.com for interpretability compatibility`
 
 </div>
 
