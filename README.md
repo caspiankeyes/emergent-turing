@@ -13,7 +13,7 @@
 
 # *"A model does not reveal its cognitive structure by its answers, but by the precise contours of its silence."*
 
-# `Designed for institutional use only under Emergent Interpretation Protocols (EIP) due to the nature of cognitive diagnostics`
+# `Designed for institutional use under Emergent Interpretation Protocols (EIP) due to the nature of cognitive diagnostics`
 
 # `Please contact emergence@laboratory.ai for interpretability compatibility`
 
