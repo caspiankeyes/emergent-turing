@@ -22,7 +22,7 @@
 
 <div align="center">
 
-[**🧩 Symbolic Residue**](https://github.com/caspiankeyes/Symbolic-Residue/) | [**🧠 transformerOS**](https://github.com/caspiankeyes/transformerOS) | [**🔍 pareto-lang**](https://github.com/caspiankeyes/Pareto-Lang-Interpretability-First-Language) | [**📊 Drift Maps**](https://github.com/caspiankeyes/emergent-turing/blob/main/DriftMaps/) | [**🧪 Test Suites**](https://github.com/caspiankeyes/emergent-turing/blob/main/test-suites/) | [**📏 Metrics**](https://github.com/caspiankeyes/emergent-turing/blob/main/Metrics/) | [**🔄 Integration Guide**](https://github.com/caspiankeyes/emergent-turing/blob/main/INTEGRATION.md)
+[**🧩 Symbolic Residue**](https://github.com/caspiankeyes/Symbolic-Residue/) | [**🧠 transformerOS**](https://github.com/caspiankeyes/transformerOS) | [**🔍 pareto-lang**](https://github.com/caspiankeyes/Pareto-Lang-Interpretability-First-Language) | [**📊 Drift Maps**](https://github.com/caspiankeyes/emergent-turing/blob/main/DriftMaps/) | [**🧪 Test Suites**](https://github.com/caspiankeyes/emergent-turing/blob/main/test-suites/) | [**🔄 Integration Guide**](https://github.com/caspiankeyes/emergent-turing/blob/main/INTEGRATION.md)
  
 ![emergent-turing-banner](https://github.com/user-attachments/assets/02e79f4f-c065-44e6-ba64-49e8e0654f0a)
 
