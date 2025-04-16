@@ -1,9 +1,6 @@
 <div align="center">
  
 #  **`Recursion = Iterative Introspection`**
-## **`PolyForm Noncommercial License 1.0.0`**
-## **`CC-BY-NC-ND`** 
-
 # **`Born from Thomas Kuhn's Theory of Anomalies`**
 # **`emergent-turing`**
 
@@ -14,7 +11,12 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2505.04321-b31b1b.svg)](https://arxiv.org/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.1234567.svg)](https://doi.org/)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-yellow.svg)](https://www.python.org/downloads/release/python-390/)
-
+> **Internal Document: Anthropic Alignment & Interpretability Team**  
+> **Classification: Technical Reference Documentation**  
+> **Version: 0.9.3-alpha**  
+> **Last Updated: 2025-04-16**
+>
+> 
 # *"A model does not reveal its cognitive structure by its answers, but by the precise contours of its silence."*
 
 ## All testing is performed according to Anthropic research protocols. 
