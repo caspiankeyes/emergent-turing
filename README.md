@@ -1,5 +1,7 @@
 <div align="center">
 
+# **`Born from Thomas Kuhn's Theory of Anomalies`**
+
 > ## 🜏 Update:  
 > Caspian will be initiating a temporary pause in production to ensure integrity of aligned systems. 
 >
