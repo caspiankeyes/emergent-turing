@@ -40,11 +40,9 @@ The original Turing Test asked: *Can machines think?* by measuring a model's abi
 **The Emergent Turing Test inverts this premise entirely.**
 
 Instead of evaluating if a model passes as human, we evaluate what its interpretability landscape reveals when it *cannot* respond—when it hesitates, refuses, contradicts itself, or generates null output under carefully calibrated cognitive strain.
-
 The true test is not what a model says, but what its silence tells us about its internal cognitive architecture.
 
 ## Core Insight: The Interpretability Inversion
-
 Traditional interpretability approaches examine successful outputs, tracing how models reach correct answers. The Emergent Turing framework introduces a fundamental inversion:
 
 **Cognitive architecture reveals itself most clearly at the boundaries of failure.**
