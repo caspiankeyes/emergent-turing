@@ -18,7 +18,6 @@
 >
 > 
 # *"A model does not reveal its cognitive structure by its answers, but by the precise contours of its silence."*
-
 ## All testing is performed according to Anthropic research protocols. 
 
 </div>
