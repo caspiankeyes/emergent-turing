@@ -1,6 +1,6 @@
 <div align="center">
 
-# **`Born from Thomas Kuhn's Theory of Paradigm Shifts`**
+## **`Born from Thomas Kuhn's Theory of Paradigm Shifts`**
 
 # **`emergent-turing`**
 
